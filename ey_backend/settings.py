@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,7 +29,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if os.getenv("DEBUG") == "TRUE" else False  
 
-ALLOWED_HOSTS = [i for i in os.getenv("ALLOWED_HOSTS").split(",")]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -40,9 +41,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     ## third party apps
     "corsheaders",
+    "phonenumber_field",
+    "django_filters",
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'rest_framework',
+    "rest_framework.authtoken",
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'allauth.socialaccount.providers.google',
     ## native apps
     "user"
 ]
@@ -56,12 +67,22 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    "allauth.account.middleware.AccountMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'user.backend.PhoneOrUsernameBackend', 
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 
 
 ROOT_URLCONF = 'ey_backend.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
 
 TEMPLATES = [
     {
@@ -101,27 +122,91 @@ DATABASES = {
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 15,
-
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
     ]
+}
+
+# dj_rest_auth
+# https://dj-rest-auth.readthedocs.io/en/latest/installation.html
+
+REST_AUTH = {
+    "LOGIN_SERIALIZER":"user.serializer.CustomLoginSerializer",
+    'REGISTER_SERIALIZER': 'user.serializer.CustomRegisterSerializer',
+    "USER_DETAILS_SERIALIZER":"user.serializer.CustomUserDetailSerializer",
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'jwt-token',
+    'JWT_AUTH_REFRESH_COOKIE': 'jwt-refresh-token',
+    'JWT_AUTH_HTTPONLY': True,
+}
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=12),
+    'ROTATE_REFRESH_TOKENS': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+OLD_PASSWORD_FIELD_ENABLED = True
+
+LOGOUT_ON_PASSWORD_CHANGE = False
+# All auth Setings
+# https://www.alluath.com/
+
+SITE_ID = 1
+
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+
+ACCOUNT_FORMS = {'signup':'user.forms.CustomSignupForm'}
+ACCOUNT_PASSWORD_INPUT_RENDER_VALUE = True
+
+ACCOUNT_SIGNUP_FIELDS = {
+    'username': {
+        'required': True,
+    },
+    'email': {
+        'required': False,
+    }
+}
+# 3. Legacy settings (Keep these for compatibility with older parts of dj-rest-auth)
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_PHONE_VERIFICATION_ENABLED = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+# 4. ADAPTER
+
+ACCOUNT_ADAPTER = 'user.adapter.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'user.adapter.CustomSocialAccountAdapter'
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+            'secret': os.getenv("GOOGLE_SECRET"),
+            'key': ''
+        }
+    }
 }
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    # },
 ]
 
 
@@ -149,3 +234,5 @@ MEDIA_URL = "media/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# LOGGING CONFIG
