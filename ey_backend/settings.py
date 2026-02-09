@@ -141,6 +141,7 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'jwt-token',
     'JWT_AUTH_REFRESH_COOKIE': 'jwt-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
+    "JWT_AUTH_COOKIE_USE_CSRF":False,
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
