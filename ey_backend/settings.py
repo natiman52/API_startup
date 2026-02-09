@@ -153,6 +153,7 @@ SIMPLE_JWT = {
 OLD_PASSWORD_FIELD_ENABLED = True
 
 LOGOUT_ON_PASSWORD_CHANGE = False
+
 # All auth Setings
 # https://www.alluath.com/
 
